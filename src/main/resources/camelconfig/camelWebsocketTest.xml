@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:camel="http://camel.apache.org/schema/spring"
+       xsi:schemaLocation="
+          http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+          http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+    <bean id="myProcessor" class="com.kenneth.demo.processor.MyProcessor"/>
+    <bean id="sendMessageProcessor" class="com.kenneth.demo.processor.SendMessageProcessor"/>
+    <bean id="connectionProcessor" class="com.kenneth.demo.processor.ConnectionProcessor"/>
+    <bean id="closedProcessor" class="com.kenneth.demo.processor.ClosedProcessor"/>
+    <bean id="testRequestProcessor" class="com.kenneth.demo.processor.TestRequestProcessor"/>
+
+    <camelContext id="camelA" xmlns="http://camel.apache.org/schema/spring">
+
+
+        <route id="test_camel_socket">
+            <from uri="restlet:/test/{id}" />
+
+            <process ref="testRequestProcessor"/>
+
+            <transform>
+                <simple>Request type : ${header.CamelHttpMethod} and ID : ${header.id}</simple>
+            </transform>
+
+            <to uri="atmosphere-websocket:///websocketTest"/>
+        </route>
+
+        <route id="testCamelDirect">
+                <from uri="direct://testCamelDirect"/>
+
+                <setBody>
+                    <constant>1234567</constant>
+                </setBody>
+                <transform>
+                    <simple>Request type : ${header.CamelHttpMethod} and ID : ${header.id}</simple>
+                </transform>
+                <log message="${in.body}"/>
+
+        </route>
+
+    </camelContext>
+
+    <camelContext xmlns="http://camel.apache.org/schema/spring">
+
+        <route id="test_socket">
+            <from uri="restlet:/test" />
+
+            <process ref="testRequestProcessor"/>
+
+            <transform>
+                <simple>Request type : ${header.CamelHttpMethod} and ID : ${header.id}</simple>
+            </transform>
+
+            <to uri="direct://next"/>
+        </route>
+
+        <route id="testWebsocket">
+            <from uri="atmosphere-websocket:///websocketTest"/>
+            <choice id="123">
+                <when>
+                    <simple>${in.header.websocket.eventType} == '1' </simple>
+                    <process ref="connectionProcessor"/>
+                    <to uri="atmosphere-websocket:///websocketTest"/>
+                </when>
+                <when>
+                    <simple>${in.header.websocket.eventType} == '0'</simple>
+                    <process ref="closedProcessor"/>
+                </when>
+                
+                <otherwise>
+                    <process ref="myProcessor"/>
+                    <to uri="atmosphere-websocket:///websocketTest"/>
+                </otherwise>
+            </choice>
+
+        </route>
+
+        <route>
+            <from uri="direct://next"/>
+           <!-- <process ref="myProcessor"/>-->
+            <to uri="atmosphere-websocket:///websocketTest?sendToAll=false"/>
+        </route>
+    </camelContext>
+
+</beans>

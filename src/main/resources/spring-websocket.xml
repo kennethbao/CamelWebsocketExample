@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:websocket="http://www.springframework.org/schema/websocket"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+       http://www.springframework.org/schema/websocket
+       http://www.springframework.org/schema/websocket/spring-websocket-4.0.xsd">
+
+    <import resource="classpath:camelconfig/camelRouteTest.xml"/>
+    <import resource="classpath:camelconfig/camelWebsocketTest.xml"/>
+
+    <bean id="websocket" class="com.kenneth.demo.websocketHandler.SpringWebSocketHandler" />
+
+    <websocket:handlers>
+        <websocket:mapping path="/echo" handler="websocket" />
+        <websocket:handshake-interceptors>
+            <bean class="com.kenneth.demo.websocketHandler.SpringWebSocketHandlerInterceptor" />
+        </websocket:handshake-interceptors>
+    </websocket:handlers>
+
+</beans>
